@@ -59,6 +59,8 @@ export default function RegistrationForm() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const age = useMemo(() => calculateAge(form.birthDate), [form.birthDate]);
   const category = useMemo(() => getAgeCategory(age), [age]);
@@ -66,6 +68,7 @@ export default function RegistrationForm() {
   const handleChange = (field: keyof FormState, value: string | File | null) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined, age: undefined }));
+    setApiError(null);
   };
 
   const validate = () => {
@@ -96,13 +99,51 @@ export default function RegistrationForm() {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitted(true);
+    setApiError(null);
 
     if (!validate()) return;
 
-    router.push("/success");
+    const formData = new FormData();
+    formData.append("full_name", form.fullName.trim());
+    formData.append("date_of_birth", form.birthDate);
+    formData.append("gender", form.gender);
+    formData.append("phone", form.phone.trim());
+    formData.append("national_id", form.nationalId.trim());
+    formData.append("address", form.address.trim());
+    formData.append("eligibility_type", form.eligibilityType === "resident" ? "resident" : "mahdara_student");
+    if (form.eligibilityType === "student") {
+      formData.append("mahdara_name", form.muhadaraName.trim());
+    }
+    if (form.idCopy) {
+      formData.append("national_id_file", form.idCopy);
+    }
+    if (form.residenceProof) {
+      formData.append("residence_document", form.residenceProof);
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/registrations", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        setApiError(result.error || "حدث خطأ أثناء إرسال الطلب.");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/success");
+    } catch {
+      setApiError("حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مجدداً.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -235,7 +276,8 @@ export default function RegistrationForm() {
               {errors.muhadaraName ? <p className="text-sm text-rose-600">{errors.muhadaraName}</p> : null}
             </div>
           ) : null}
-          <p className="mt-5 text-sm leading-7 text-rose-700">12–17 سنة غير مشمولين بالفئات المعلنة.</p>
+          <p className="mt-5 text-sm leading-7 text-rose-700">الفئة تحت 12سنة
+            الفئة من ١٢سنه الي ٢٥ سنة</p>
         </div>
       </section>
 
@@ -278,11 +320,13 @@ export default function RegistrationForm() {
             <p>يرجى التأكد من صحة جميع الحقول، خاصة رقم الهاتف ورقم بطاقة التعريف والمنطقة.</p>
             <p className="mt-3 text-rose-700">بملاحظة أن التسجيل الفعلي غير مرتبط بخادم بعد.</p>
           </div>
+          {apiError ? <p className="text-sm text-rose-600">{apiError}</p> : null}
           <button
             type="submit"
+            disabled={loading}
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-emerald-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
-            إرسال الطلب
+            {loading ? "جارٍ الإرسال..." : "إرسال الطلب"}
           </button>
         </div>
       </section>

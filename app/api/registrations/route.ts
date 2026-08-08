@@ -117,18 +117,37 @@ export async function POST(request: Request) {
 
     const supabase = createSupabaseAdmin();
 
-    const duplicateCheck = await supabase
+    const duplicateCheckByNationalId = await supabase
       .from("participants")
       .select("id")
-      .or(`national_id.eq.${form.national_id},phone.eq.${form.phone}`)
+      .eq("national_id", form.national_id)
       .limit(1)
       .maybeSingle();
 
-    if (duplicateCheck.error) {
+    if (duplicateCheckByNationalId.error) {
+      console.error("Supabase duplicate check error (national_id)", JSON.stringify(duplicateCheckByNationalId.error, null, 2));
+      if (duplicateCheckByNationalId.error.code === "42501") {
+        return NextResponse.json({ error: "خطأ في إعدادات Supabase: صلاحيات جدول المشاركين غير كافية." }, { status: 500 });
+      }
       return NextResponse.json({ error: "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى لاحقاً." }, { status: 500 });
     }
 
-    if (duplicateCheck.data) {
+    const duplicateCheckByPhone = await supabase
+      .from("participants")
+      .select("id")
+      .eq("phone", form.phone)
+      .limit(1)
+      .maybeSingle();
+
+    if (duplicateCheckByPhone.error) {
+      console.error("Supabase duplicate check error (phone)", JSON.stringify(duplicateCheckByPhone.error, null, 2));
+      if (duplicateCheckByPhone.error.code === "42501") {
+        return NextResponse.json({ error: "خطأ في إعدادات Supabase: صلاحيات جدول المشاركين غير كافية." }, { status: 500 });
+      }
+      return NextResponse.json({ error: "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى لاحقاً." }, { status: 500 });
+    }
+
+    if (duplicateCheckByNationalId.data || duplicateCheckByPhone.data) {
       return NextResponse.json({ error: "لا يمكن تسجيل طلب مماثل في الوقت الحالي. يرجى التواصل مع الجهة المنظمة إذا كنت تعتقد أن ذلك خطأ." }, { status: 409 });
     }
 
@@ -147,6 +166,7 @@ export async function POST(request: Request) {
     }).select("id").single();
 
     if (participantInsert.error || !participantInsert.data?.id) {
+      console.error("Supabase participant insert error", participantInsert.error);
       return NextResponse.json({ error: "فشل إنشاء التسجيل. يرجى المحاولة لاحقاً." }, { status: 500 });
     }
 
@@ -164,6 +184,7 @@ export async function POST(request: Request) {
       .single();
 
     if (registrationUpdate.error || !registrationUpdate.data?.registration_number) {
+      console.error("Supabase registration number update error", registrationUpdate.error);
       await supabase.from("participants").delete().eq("id", participantId);
       return NextResponse.json({ error: "فشل إنشاء رقم التسجيل. يرجى المحاولة لاحقاً." }, { status: 500 });
     }
@@ -210,9 +231,11 @@ export async function POST(request: Request) {
 
       const metadataResult = await supabase.from("participant_documents").insert(metadataInserts);
       if (metadataResult.error) {
+        console.error("Supabase metadata insert error", metadataResult.error);
         throw { error: metadataResult.error };
       }
-    } catch {
+    } catch (uploadError) {
+      console.error("File upload or metadata save error", uploadError);
       await Promise.all(
         uploadedFiles.map((fileMeta) =>
           supabase.storage.from("participant-documents").remove([fileMeta.storagePath])
@@ -227,7 +250,8 @@ export async function POST(request: Request) {
       full_name: form.full_name.trim(),
       category,
     }, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("Unexpected registration API error", error);
     return NextResponse.json({ error: "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً." }, { status: 500 });
   }
 }
