@@ -65,8 +65,8 @@ export async function POST(request: Request) {
 
     const parsed = RegistrationBodySchema.safeParse(payload);
     if (!parsed.success) {
-      const firstError = parsed.error.errors[0];
-      return NextResponse.json({ error: firstError.message }, { status: 400 });
+      const firstError = parsed.error.issues?.[0]?.message ?? "Invalid input";
+      return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
     const form = parsed.data;
@@ -185,18 +185,18 @@ export async function POST(request: Request) {
     try {
       const nationalUpload = await uploadFile(nationalIdFile, "national_id", "national-id");
       if (!nationalUpload.success) throw nationalUpload;
-      uploadedFiles.push(nationalUpload.metadata);
+      uploadedFiles.push(nationalUpload.metadata!);
 
       if (residenceFile) {
         const residenceUpload = await uploadFile(residenceFile, "residence_document", "residence");
         if (!residenceUpload.success) throw residenceUpload;
-        uploadedFiles.push(residenceUpload.metadata);
+        uploadedFiles.push(residenceUpload.metadata!);
       }
 
       if (mahdaraFile) {
         const mahdaraUpload = await uploadFile(mahdaraFile, "mahdara_document", "mahdara");
         if (!mahdaraUpload.success) throw mahdaraUpload;
-        uploadedFiles.push(mahdaraUpload.metadata);
+        uploadedFiles.push(mahdaraUpload.metadata!);
       }
 
       const metadataInserts = uploadedFiles.map((fileMeta) => ({
@@ -212,7 +212,7 @@ export async function POST(request: Request) {
       if (metadataResult.error) {
         throw { error: metadataResult.error };
       }
-    } catch (uploadError) {
+    } catch {
       await Promise.all(
         uploadedFiles.map((fileMeta) =>
           supabase.storage.from("participant-documents").remove([fileMeta.storagePath])
@@ -227,7 +227,7 @@ export async function POST(request: Request) {
       full_name: form.full_name.trim(),
       category,
     }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً." }, { status: 500 });
   }
 }

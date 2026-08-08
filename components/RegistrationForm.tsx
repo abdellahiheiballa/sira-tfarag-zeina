@@ -62,7 +62,6 @@ export default function RegistrationForm() {
 
   const age = useMemo(() => calculateAge(form.birthDate), [form.birthDate]);
   const category = useMemo(() => getAgeCategory(age), [age]);
-  const ageInvalid = age !== null && (age < 0 || (age >= 12 && age < 18) || age > 25);
 
   const handleChange = (field: keyof FormState, value: string | File | null) => {
     setForm((prev) => ({ ...prev, [field]: value }));
