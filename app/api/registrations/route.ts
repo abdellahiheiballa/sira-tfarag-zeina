@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdmin } from "../../../lib/supabaseAdmin";
+import { del, put } from "@vercel/blob";
+import { prisma } from "../../../lib/prisma";
 import { createRegistrationNumber } from "../../../lib/registrationNumber";
 import { z } from "zod";
 
@@ -115,141 +116,80 @@ export async function POST(request: Request) {
       }
     }
 
-    const supabase = createSupabaseAdmin();
+    const duplicate = await prisma.participant.findFirst({
+      where: {
+        OR: [{ nationalId: form.national_id }, { phone: form.phone }],
+      },
+      select: { id: true },
+    });
 
-    const duplicateCheckByNationalId = await supabase
-      .from("participants")
-      .select("id")
-      .eq("national_id", form.national_id)
-      .limit(1)
-      .maybeSingle();
-
-    if (duplicateCheckByNationalId.error) {
-      console.error("Supabase duplicate check error (national_id)", JSON.stringify(duplicateCheckByNationalId.error, null, 2));
-      if (duplicateCheckByNationalId.error.code === "42501") {
-        return NextResponse.json({ error: "خطأ في إعدادات Supabase: صلاحيات جدول المشاركين غير كافية." }, { status: 500 });
-      }
-      return NextResponse.json({ error: "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى لاحقاً." }, { status: 500 });
+    if (duplicate) {
+      return NextResponse.json(
+        { error: "لا يمكن تسجيل طلب مماثل في الوقت الحالي. يرجى التواصل مع الجهة المنظمة إذا كنت تعتقد أن ذلك خطأ." },
+        { status: 409 }
+      );
     }
 
-    const duplicateCheckByPhone = await supabase
-      .from("participants")
-      .select("id")
-      .eq("phone", form.phone)
-      .limit(1)
-      .maybeSingle();
+    const participant = await prisma.participant.create({
+      data: {
+        registrationNumber: "",
+        fullName: form.full_name.trim(),
+        dateOfBirth: form.date_of_birth,
+        gender: form.gender,
+        phone: form.phone.trim(),
+        nationalId: form.national_id.trim(),
+        address: form.address.trim(),
+        eligibilityType: form.eligibility_type,
+        mahdaraName: form.mahdara_name?.trim() ?? null,
+        category,
+        status: "pending",
+      },
+    });
 
-    if (duplicateCheckByPhone.error) {
-      console.error("Supabase duplicate check error (phone)", JSON.stringify(duplicateCheckByPhone.error, null, 2));
-      if (duplicateCheckByPhone.error.code === "42501") {
-        return NextResponse.json({ error: "خطأ في إعدادات Supabase: صلاحيات جدول المشاركين غير كافية." }, { status: 500 });
-      }
-      return NextResponse.json({ error: "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى لاحقاً." }, { status: 500 });
-    }
+    const registration_number = createRegistrationNumber(participant.id);
 
-    if (duplicateCheckByNationalId.data || duplicateCheckByPhone.data) {
-      return NextResponse.json({ error: "لا يمكن تسجيل طلب مماثل في الوقت الحالي. يرجى التواصل مع الجهة المنظمة إذا كنت تعتقد أن ذلك خطأ." }, { status: 409 });
-    }
-
-    const participantInsert = await supabase.from("participants").insert({
-      registration_number: "",
-      full_name: form.full_name.trim(),
-      date_of_birth: form.date_of_birth,
-      gender: form.gender,
-      phone: form.phone.trim(),
-      national_id: form.national_id.trim(),
-      address: form.address.trim(),
-      eligibility_type: form.eligibility_type,
-      mahdara_name: form.mahdara_name?.trim() ?? null,
-      category,
-      status: "pending",
-    }).select("id").single();
-
-    if (participantInsert.error || !participantInsert.data?.id) {
-      console.error("Supabase participant insert error", participantInsert.error);
-      return NextResponse.json({ error: "فشل إنشاء التسجيل. يرجى المحاولة لاحقاً." }, { status: 500 });
-    }
-
-    const participantId = participantInsert.data.id;
-    const idNumber = typeof participantId === "number" ? participantId : Number(participantId);
-    const registration_number = Number.isFinite(idNumber)
-      ? createRegistrationNumber(idNumber)
-      : `TFZ-SIRA-2026-${String(participantId).slice(0, 5).padStart(5, "0")}`;
-
-    const registrationUpdate = await supabase
-      .from("participants")
-      .update({ registration_number })
-      .eq("id", participantId)
-      .select("registration_number")
-      .single();
-
-    if (registrationUpdate.error || !registrationUpdate.data?.registration_number) {
-      console.error("Supabase registration number update error", registrationUpdate.error);
-      await supabase.from("participants").delete().eq("id", participantId);
-      return NextResponse.json({ error: "فشل إنشاء رقم التسجيل. يرجى المحاولة لاحقاً." }, { status: 500 });
-    }
+    await prisma.participant.update({
+      where: { id: participant.id },
+      data: { registrationNumber: registration_number },
+    });
 
     const uploadFile = async (file: File, documentType: string, folder: string) => {
       const uniqueName = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      const storagePath = `participants/${participantId}/${folder}/${uniqueName}`;
-      const uploadResult = await supabase.storage.from("participant-documents").upload(storagePath, file.stream(), {
+      const pathname = `participants/${participant.id}/${folder}/${uniqueName}`;
+      const blob = await put(pathname, file, {
+        access: "private",
         contentType: file.type,
       });
-      if (uploadResult.error) {
-        return { success: false, error: uploadResult.error, storagePath };
-      }
-      return { success: true, metadata: { documentType, storagePath, originalFilename: file.name, mimeType: file.type, fileSize: file.size } };
+      return { documentType, storagePath: blob.url, originalFilename: file.name, mimeType: file.type, fileSize: file.size };
     };
 
     const uploadedFiles = [] as Array<{ documentType: string; storagePath: string; originalFilename: string; mimeType: string; fileSize: number }>;
 
     try {
-      const nationalUpload = await uploadFile(nationalIdFile, "national_id", "national-id");
-      if (!nationalUpload.success) throw nationalUpload;
-      uploadedFiles.push(nationalUpload.metadata!);
+      uploadedFiles.push(await uploadFile(nationalIdFile, "national_id", "national-id"));
+      if (residenceFile) uploadedFiles.push(await uploadFile(residenceFile, "residence_document", "residence"));
+      if (mahdaraFile) uploadedFiles.push(await uploadFile(mahdaraFile, "mahdara_document", "mahdara"));
 
-      if (residenceFile) {
-        const residenceUpload = await uploadFile(residenceFile, "residence_document", "residence");
-        if (!residenceUpload.success) throw residenceUpload;
-        uploadedFiles.push(residenceUpload.metadata!);
-      }
-
-      if (mahdaraFile) {
-        const mahdaraUpload = await uploadFile(mahdaraFile, "mahdara_document", "mahdara");
-        if (!mahdaraUpload.success) throw mahdaraUpload;
-        uploadedFiles.push(mahdaraUpload.metadata!);
-      }
-
-      const metadataInserts = uploadedFiles.map((fileMeta) => ({
-        participant_id: participantId,
-        document_type: fileMeta.documentType,
-        storage_path: fileMeta.storagePath,
-        original_filename: fileMeta.originalFilename,
-        mime_type: fileMeta.mimeType,
-        file_size: fileMeta.fileSize,
-      }));
-
-      const metadataResult = await supabase.from("participant_documents").insert(metadataInserts);
-      if (metadataResult.error) {
-        console.error("Supabase metadata insert error", metadataResult.error);
-        throw { error: metadataResult.error };
-      }
+      await prisma.participantDocument.createMany({
+        data: uploadedFiles.map((fileMeta) => ({
+          participantId: participant.id,
+          documentType: fileMeta.documentType,
+          storagePath: fileMeta.storagePath,
+          originalFilename: fileMeta.originalFilename,
+          mimeType: fileMeta.mimeType,
+          fileSize: fileMeta.fileSize,
+        })),
+      });
     } catch (uploadError) {
-      console.error("File upload or metadata save error", uploadError);
-      await Promise.all(
-        uploadedFiles.map((fileMeta) =>
-          supabase.storage.from("participant-documents").remove([fileMeta.storagePath])
-        )
-      );
-      await supabase.from("participants").delete().eq("id", participantId);
+      await Promise.all(uploadedFiles.map((fileMeta) => del(fileMeta.storagePath).catch(() => {})));
+      await prisma.participant.delete({ where: { id: participant.id } });
       return NextResponse.json({ error: "فشل تحميل المستندات. يرجى المحاولة مرة أخرى." }, { status: 500 });
     }
 
-    return NextResponse.json({
-      registration_number,
-      full_name: form.full_name.trim(),
-      category,
-    }, { status: 201 });
+    return NextResponse.json(
+      { registration_number, full_name: form.full_name.trim(), category },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Unexpected registration API error", error);
     return NextResponse.json({ error: "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً." }, { status: 500 });

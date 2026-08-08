@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Participant {
+  id                 Int                   @id @default(autoincrement())
+  registrationNumber String                @unique @default("") @map("registration_number")
+  fullName           String                @map("full_name")
+  dateOfBirth        String                @map("date_of_birth")
+  gender             String
+  phone              String
+  nationalId         String                @map("national_id")
+  address            String                @map("address")
+  eligibilityType    String                @map("eligibility_type")
+  mahdaraName        String?               @map("mahdara_name")
+  category           String
+  status             String                @default("pending")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  documents          ParticipantDocument[]
+
+  @@map("participants")
+}
+
+model ParticipantDocument {
+  id               Int         @id @default(autoincrement())
+  participantId    Int         @map("participant_id")
+  participant      Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  documentType     String      @map("document_type")
+  storagePath      String      @map("storage_path")
+  originalFilename String      @map("original_filename")
+  mimeType         String      @map("mime_type")
+  fileSize         Int         @map("file_size")
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  @@map("participant_documents")
+}
