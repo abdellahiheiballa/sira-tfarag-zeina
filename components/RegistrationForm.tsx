@@ -38,8 +38,8 @@ function calculateAge(birthDate: string) {
 function getAgeCategory(age: number | null) {
   if (age === null) return "";
   if (age < 0) return "تاريخ ميلاد غير صالح";
-  if (age < 12) return "الأطفال: أقل من 12 سنة";
-  if (age >= 18 && age <= 25) return "الكبار: من 18 إلى 25 سنة";
+  if (age < 12) return "الفئة تحت 12سنة";
+  if (age >= 12 && age <= 25) return "الفئة من ١٢سنه الي ٢٥ سنة";
   return "غير مشمول بالفئات المعلنة";
 }
 
@@ -88,10 +88,8 @@ export default function RegistrationForm() {
       nextErrors.age = "يرجى إدخال تاريخ ميلاد صالح";
     } else if (age < 0) {
       nextErrors.age = "تاريخ الميلاد غير صالح";
-    } else if (age >= 12 && age < 18) {
-      nextErrors.age = "12–17 سنة غير مشملين بالفئات المعلنة";
     } else if (age > 25) {
-      nextErrors.age = "الفئة العمرية غير مؤهلة للمشاركة";
+      nextErrors.age = "الفئة العمرية أكبر من 25 سنة غير مشمولة بالمشاركة";
     }
 
     setErrors(nextErrors);

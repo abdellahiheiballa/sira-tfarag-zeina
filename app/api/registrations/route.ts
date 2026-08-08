@@ -99,10 +99,10 @@ export async function POST(request: Request) {
     let category: string;
     if (age < 12) {
       category = "children";
-    } else if (age >= 18 && age <= 25) {
+    } else if (age >= 12 && age <= 25) {
       category = "adults";
     } else {
-      return NextResponse.json({ error: "الفئة العمرية 12-17 سنة غير مشمولة بالمشاركة" }, { status: 400 });
+      return NextResponse.json({ error: "الفئة العمرية أكبر من 25 سنة غير مشمولة بالمشاركة" }, { status: 400 });
     }
 
     const fileCandidates = [nationalIdFile, residenceFile ?? null, mahdaraFile ?? null].filter(Boolean) as File[];

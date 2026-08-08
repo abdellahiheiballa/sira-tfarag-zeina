@@ -26,10 +26,10 @@ export default function CompetitionPage() {
               </div>
               <div className="rounded-3xl border border-emerald-200 bg-white p-5">
                 <p className="text-lg font-semibold text-emerald-950">الكبار</p>
-                <p className="mt-2 text-sm text-slate-700">من 18 إلى 25 سنة</p>
+                <p className="mt-2 text-sm text-slate-700">من ١٢ سنه الي ٢٥ سنة</p>
               </div>
             </div>
-            <p className="mt-5 text-sm text-rose-700">الفئة العمرية من 12 إلى 17 سنة غير مشمولة في الفئات المعلنة.</p>
+            <p className="mt-5 text-sm text-rose-700">الفئة العمرية تحت 12سنة أو من ١٢سنه الي ٢٥ سنة.</p>
           </div>
           <div className="rounded-[2rem] border border-emerald-100 bg-white/90 p-6 shadow-[0_18px_50px_rgba(4,58,51,0.05)] sm:p-8">
             <h2 className="text-right text-2xl font-semibold text-emerald-950">شروط المشاركة</h2>
