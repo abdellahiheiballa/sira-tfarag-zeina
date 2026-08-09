@@ -171,7 +171,7 @@ export async function POST(request: Request) {
     }
 
     const participantId = participantInsert.data.id;
-    const registration_number = createRegistrationNumber(Number(participantId));
+    const registration_number = createRegistrationNumber(participantId);
 
     const registrationUpdate = await supabase
       .from("participants")
