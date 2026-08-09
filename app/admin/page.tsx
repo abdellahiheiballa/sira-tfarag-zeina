@@ -36,6 +36,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
 
   const isLoggedIn = useMemo(() => username === "admin" && password === "admin123", [username, password]);
+  const childrenSubmissions = useMemo(() => submissions.filter((submission) => submission.category === "children"), [submissions]);
+  const adultSubmissions = useMemo(() => submissions.filter((submission) => submission.category === "adults"), [submissions]);
 
   const fetchSubmissions = useCallback(async () => {
     setError(null);
@@ -123,68 +125,143 @@ export default function AdminPage() {
         </div>
 
         {submissions.length > 0 ? (
-          <div className="mt-10 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <h2 className="text-2xl font-semibold">التسجيلات ({submissions.length})</h2>
-            <div className="mt-6 space-y-6">
-              {submissions.map((submission) => (
-                <div key={submission.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm text-slate-500">رقم التسجيل</p>
-                      <p className="text-lg font-semibold text-slate-900">{submission.registration_number}</p>
+          <div className="mt-10 space-y-10">
+            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6">
+              <h2 className="text-2xl font-semibold">الفئة تحت 12 سنة ({childrenSubmissions.length})</h2>
+              <div className="mt-6 space-y-6">
+                {childrenSubmissions.length > 0 ? (
+                  childrenSubmissions.map((submission) => (
+                    <div key={submission.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm text-slate-500">رقم التسجيل</p>
+                          <p className="text-lg font-semibold text-slate-900">{submission.registration_number}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-slate-500">الاسم</p>
+                          <p className="font-semibold text-slate-900">{submission.full_name}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">الهاتف</p>
+                          <p className="mt-1 text-sm text-slate-900">{submission.phone}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">الهوية</p>
+                          <p className="mt-1 text-sm text-slate-900">{submission.national_id}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">الفئة</p>
+                          <p className="mt-1 text-sm text-slate-900 capitalize">{submission.category}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 text-sm text-slate-700">
+                        <p>نوع الأهلية: {submission.eligibility_type}</p>
+                        {submission.mahdara_name ? <p>اسم المحظرة: {submission.mahdara_name}</p> : null}
+                        <p>الحالة: {submission.status}</p>
+                      </div>
+                      {submission.documents.length > 0 ? (
+                        <div className="mt-4 rounded-3xl bg-slate-50 p-4">
+                          <p className="text-sm font-semibold text-slate-900">المستندات</p>
+                          <ul className="mt-3 space-y-2 text-sm text-slate-700">
+                            {submission.documents.map((document) => (
+                              <li key={document.storage_path} className="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p className="font-medium text-slate-900">{document.document_type}</p>
+                                <p className="text-xs text-slate-500">{document.original_filename}</p>
+                                <p className="text-xs text-slate-500">{document.mime_type} · {document.file_size} بايت</p>
+                                {document.url ? (
+                                  <a
+                                    href={document.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-2 inline-block text-xs font-medium text-slate-900 underline"
+                                  >
+                                    افتح المستند
+                                  </a>
+                                ) : (
+                                  <p className="mt-2 text-xs text-red-600">لا يمكن فتح هذا المستند حالياً.</p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-slate-500">الاسم</p>
-                      <p className="font-semibold text-slate-900">{submission.full_name}</p>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-600">لا توجد تسجيلات في هذه الفئة.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6">
+              <h2 className="text-2xl font-semibold">الفئة من ١٢سنه الي ٢٥ سنة ({adultSubmissions.length})</h2>
+              <div className="mt-6 space-y-6">
+                {adultSubmissions.length > 0 ? (
+                  adultSubmissions.map((submission) => (
+                    <div key={submission.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm text-slate-500">رقم التسجيل</p>
+                          <p className="text-lg font-semibold text-slate-900">{submission.registration_number}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-slate-500">الاسم</p>
+                          <p className="font-semibold text-slate-900">{submission.full_name}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">الهاتف</p>
+                          <p className="mt-1 text-sm text-slate-900">{submission.phone}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">الهوية</p>
+                          <p className="mt-1 text-sm text-slate-900">{submission.national_id}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">الفئة</p>
+                          <p className="mt-1 text-sm text-slate-900 capitalize">{submission.category}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 text-sm text-slate-700">
+                        <p>نوع الأهلية: {submission.eligibility_type}</p>
+                        {submission.mahdara_name ? <p>اسم المحظرة: {submission.mahdara_name}</p> : null}
+                        <p>الحالة: {submission.status}</p>
+                      </div>
+                      {submission.documents.length > 0 ? (
+                        <div className="mt-4 rounded-3xl bg-slate-50 p-4">
+                          <p className="text-sm font-semibold text-slate-900">المستندات</p>
+                          <ul className="mt-3 space-y-2 text-sm text-slate-700">
+                            {submission.documents.map((document) => (
+                              <li key={document.storage_path} className="rounded-2xl border border-slate-200 bg-white p-3">
+                                <p className="font-medium text-slate-900">{document.document_type}</p>
+                                <p className="text-xs text-slate-500">{document.original_filename}</p>
+                                <p className="text-xs text-slate-500">{document.mime_type} · {document.file_size} بايت</p>
+                                {document.url ? (
+                                  <a
+                                    href={document.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-2 inline-block text-xs font-medium text-slate-900 underline"
+                                  >
+                                    افتح المستند
+                                  </a>
+                                ) : (
+                                  <p className="mt-2 text-xs text-red-600">لا يمكن فتح هذا المستند حالياً.</p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
-                  </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">الهاتف</p>
-                      <p className="mt-1 text-sm text-slate-900">{submission.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">الهوية</p>
-                      <p className="mt-1 text-sm text-slate-900">{submission.national_id}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">الفئة</p>
-                      <p className="mt-1 text-sm text-slate-900 capitalize">{submission.category}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 text-sm text-slate-700">
-                    <p>نوع الأهلية: {submission.eligibility_type}</p>
-                    {submission.mahdara_name ? <p>اسم المحظرة: {submission.mahdara_name}</p> : null}
-                    <p>الحالة: {submission.status}</p>
-                  </div>
-                  {submission.documents.length > 0 ? (
-                    <div className="mt-4 rounded-3xl bg-slate-50 p-4">
-                      <p className="text-sm font-semibold text-slate-900">المستندات</p>
-                      <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                        {submission.documents.map((document) => (
-                          <li key={document.storage_path} className="rounded-2xl border border-slate-200 bg-white p-3">
-                            <p className="font-medium text-slate-900">{document.document_type}</p>
-                            <p className="text-xs text-slate-500">{document.original_filename}</p>
-                            <p className="text-xs text-slate-500">{document.mime_type} · {document.file_size} بايت</p>
-                            {document.url ? (
-                              <a
-                                href={document.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-2 inline-block text-xs font-medium text-slate-900 underline"
-                              >
-                                افتح المستند
-                              </a>
-                            ) : (
-                              <p className="mt-2 text-xs text-red-600">لا يمكن فتح هذا المستند حالياً.</p>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                </div>
-              ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-600">لا توجد تسجيلات في هذه الفئة.</p>
+                )}
+              </div>
             </div>
           </div>
         ) : null}
