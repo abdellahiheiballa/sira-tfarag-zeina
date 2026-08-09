@@ -73,7 +73,7 @@ export default function RegistrationForm() {
 
   const validate = () => {
     const nextErrors: FormErrors = {};
-    const phonePattern = /^(?:\+222|00222)?\d{8}$/;
+    const phonePattern = /^2\d{7}$/;
     const nationalIdPattern = /^\d{10}$/;
 
     if (!form.fullName.trim()) nextErrors.fullName = "يرجى إدخال الاسم الكامل";
@@ -82,7 +82,7 @@ export default function RegistrationForm() {
     if (!form.phone.trim()) {
       nextErrors.phone = "يرجى إدخال رقم الهاتف";
     } else if (!phonePattern.test(form.phone.trim())) {
-      nextErrors.phone = "يرجى إدخال رقم هاتف موريتاني صالح (+22212345678 أو 8 أرقام).";
+      nextErrors.phone = "يرجى إدخال رقم هاتف موريتاني محلي صالح مكون من 8 أرقام (مثلاً 24xxxxxx).";
     }
     if (!form.nationalId.trim()) {
       nextErrors.nationalId = "يرجى إدخال رقم بطاقة التعريف الوطنية";
@@ -206,7 +206,7 @@ export default function RegistrationForm() {
                 id="phone"
                 type="tel"
                 inputMode="tel"
-                placeholder="+22212345678 أو 12345678"
+                placeholder="مثال: 24xxxxxx"
                 value={form.phone}
                 onChange={(event) => handleChange("phone", event.target.value)}
                 className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-right text-sm outline-none transition focus:border-emerald-900 focus:ring-2 focus:ring-emerald-100"
