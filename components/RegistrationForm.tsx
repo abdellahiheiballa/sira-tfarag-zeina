@@ -92,10 +92,10 @@ export default function RegistrationForm() {
     if (!form.address.trim()) nextErrors.address = "يرجى إدخال العنوان";
     if (!form.eligibilityType) nextErrors.eligibilityType = "يرجى اختيار نوع الأهلية";
     if (form.eligibilityType === "student" && !form.muhadaraName.trim()) {
-      nextErrors.muhadaraName = "يرجى إدخال اسم المحظرة";
+      nextErrors.muhadaraName = "يرجى إدخال اسم المحظرة حتى تتم المصادقة على أحقية المشاركة.";
     }
-    if (!form.idCopy) nextErrors.idCopy = "يرجى إرفاق صورة بطاقة التعريف";
-    if (!form.residenceProof) nextErrors.residenceProof = "يرجى إرفاق شهادة الإقامة أو الإفادة المحظرية";
+    if (!form.idCopy) nextErrors.idCopy = "يرجى إرفاق صورة بطاقة التعريف الوطنية لتأكيد الهوية.";
+    if (!form.residenceProof) nextErrors.residenceProof = "يرجى إرفاق شهادة الإقامة أو إفادة المحظرة لإثبات الأهلية.";
 
     if (age === null) {
       nextErrors.age = "يرجى إدخال تاريخ ميلاد صالح";
@@ -148,7 +148,7 @@ export default function RegistrationForm() {
         return;
       }
 
-      router.push("/success");
+      router.push(`/success?registration_number=${encodeURIComponent(result.registration_number)}`);
     } catch {
       setApiError("حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مجدداً.");
     } finally {
@@ -212,6 +212,7 @@ export default function RegistrationForm() {
                 className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-right text-sm outline-none transition focus:border-emerald-900 focus:ring-2 focus:ring-emerald-100"
               />
               {errors.phone ? <p className="text-sm text-rose-600">{errors.phone}</p> : null}
+              <p className="text-xs text-slate-500">يرجى إدخال رقم هاتف محلي صالح بإحدى البادئات 2 أو 3 أو 4.</p>
             </div>
           </div>
         </div>
