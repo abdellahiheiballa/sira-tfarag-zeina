@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -17,9 +18,12 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-white/70 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
         <div className="flex items-center gap-4">
-          <div className="rounded-2xl bg-emerald-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-950/10">
-            بلدية تفرغ زينه
-          </div>
+          <Link href="/" className="flex items-center gap-3">
+            <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5">
+              <Image src="/tvz-logo.jpeg" alt="شعار تفرغ زينه" fill style={{ objectFit: "contain" }} />
+            </div>
+            <div className="text-sm font-semibold text-slate-900">بلدية تفرغ زينه</div>
+          </Link>
           <div className="hidden items-center gap-8 text-sm font-medium text-slate-700 rtl:space-x-reverse sm:flex">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} className="transition hover:text-emerald-900">
