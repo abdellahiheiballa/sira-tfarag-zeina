@@ -5,14 +5,14 @@ import { z } from "zod";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"];
-const MAURITANIA_PHONE_REGEX = /^2\d{7}$/;
+const MAURITANIA_PHONE_REGEX = /^[234]\d{7}$/;
 const MAURITANIA_NATIONAL_ID_REGEX = /^\d{10}$/;
 
 const RegistrationBodySchema = z.object({
   full_name: z.string().min(3, "يرجى إدخال الاسم الكامل"),
   date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "يرجى إدخال تاريخ ميلاد صالح"),
   gender: z.enum(["male", "female"], "يرجى اختيار الجنس"),
-  phone: z.string().regex(MAURITANIA_PHONE_REGEX, "يرجى إدخال رقم هاتف موريتاني محلي صالح مكون من 8 أرقام (مثلاً 24xxxxxx)."),
+  phone: z.string().regex(MAURITANIA_PHONE_REGEX, "يرجى إدخال رقم هاتف موريتاني محلي صالح مكون من 8 أرقام يبدأ بـ 2 أو 3 أو 4."),
   national_id: z.string().regex(MAURITANIA_NATIONAL_ID_REGEX, "يرجى إدخال رقم بطاقة تعريف موريتاني صالح مكون من 10 أرقام."),
   address: z.string().min(5, "يرجى إدخال العنوان"),
   eligibility_type: z.enum(["resident", "mahdara_student"], "يرجى اختيار نوع الأهلية"),
