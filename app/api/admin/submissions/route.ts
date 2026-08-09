@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const password = body?.password;
 
     if (username !== "admin" || password !== "admin123") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "بيانات اعتماد غير صحيحة" }, { status: 401 });
     }
 
     const supabase = createSupabaseAdmin();
