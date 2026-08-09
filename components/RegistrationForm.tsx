@@ -73,12 +73,22 @@ export default function RegistrationForm() {
 
   const validate = () => {
     const nextErrors: FormErrors = {};
+    const phonePattern = /^(?:\+222|00222)?\d{8}$/;
+    const nationalIdPattern = /^\d{10}$/;
 
     if (!form.fullName.trim()) nextErrors.fullName = "يرجى إدخال الاسم الكامل";
     if (!form.birthDate) nextErrors.birthDate = "يرجى إدخال تاريخ الميلاد";
     if (!form.gender) nextErrors.gender = "يرجى اختيار الجنس";
-    if (!form.phone.trim()) nextErrors.phone = "يرجى إدخال رقم الهاتف";
-    if (!form.nationalId.trim()) nextErrors.nationalId = "يرجى إدخال رقم بطاقة التعريف الوطنية";
+    if (!form.phone.trim()) {
+      nextErrors.phone = "يرجى إدخال رقم الهاتف";
+    } else if (!phonePattern.test(form.phone.trim())) {
+      nextErrors.phone = "يرجى إدخال رقم هاتف موريتاني صالح (+22212345678 أو 8 أرقام).";
+    }
+    if (!form.nationalId.trim()) {
+      nextErrors.nationalId = "يرجى إدخال رقم بطاقة التعريف الوطنية";
+    } else if (!nationalIdPattern.test(form.nationalId.trim())) {
+      nextErrors.nationalId = "يرجى إدخال رقم بطاقة تعريف موريتاني صالح مكون من 10 أرقام.";
+    }
     if (!form.address.trim()) nextErrors.address = "يرجى إدخال العنوان";
     if (!form.eligibilityType) nextErrors.eligibilityType = "يرجى اختيار نوع الأهلية";
     if (form.eligibilityType === "student" && !form.muhadaraName.trim()) {
@@ -196,6 +206,7 @@ export default function RegistrationForm() {
                 id="phone"
                 type="tel"
                 inputMode="tel"
+                placeholder="+22212345678 أو 12345678"
                 value={form.phone}
                 onChange={(event) => handleChange("phone", event.target.value)}
                 className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-right text-sm outline-none transition focus:border-emerald-900 focus:ring-2 focus:ring-emerald-100"
@@ -214,6 +225,8 @@ export default function RegistrationForm() {
               <label htmlFor="nationalId" className="block text-sm font-medium text-slate-700">رقم بطاقة التعريف الوطنية</label>
               <input
                 id="nationalId"
+                inputMode="numeric"
+                placeholder="مثال: 1234567890"
                 value={form.nationalId}
                 onChange={(event) => handleChange("nationalId", event.target.value)}
                 className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-right text-sm outline-none transition focus:border-emerald-900 focus:ring-2 focus:ring-emerald-100"
