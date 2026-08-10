@@ -5,7 +5,7 @@ import { createSupabaseAdmin } from "../../lib/supabaseAdmin";
 import SaveTicketPdfButton from "../../components/SaveTicketPdfButton";
 
 type SuccessPageProps = {
-  searchParams: { registration_number?: string };
+  searchParams: Promise<{ registration_number?: string | string[] }>;
 };
 
 type RegistrationSummary = {
@@ -42,7 +42,11 @@ function toArabicStatus(status: string) {
 }
 
 export default async function SuccessPage({ searchParams }: SuccessPageProps) {
-  const registrationNumber = searchParams.registration_number?.trim();
+  const resolvedSearchParams = await searchParams;
+  const registrationParam = resolvedSearchParams.registration_number;
+  const registrationNumber = Array.isArray(registrationParam)
+    ? registrationParam[0]?.trim()
+    : registrationParam?.trim();
   let summary: RegistrationSummary | null = null;
 
   if (registrationNumber) {
