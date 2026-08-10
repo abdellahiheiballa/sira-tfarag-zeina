@@ -183,7 +183,27 @@ export async function POST(request: Request) {
     }
 
     const participantId = participantInsert.data.id;
-    const registration_number = createRegistrationNumber(participantId);
+
+    const registrationNumbersResult = await supabase
+      .from("participants")
+      .select("registration_number");
+
+    if (registrationNumbersResult.error) {
+      console.error("Supabase registration numbers fetch error", registrationNumbersResult.error);
+      await supabase.from("participants").delete().eq("id", participantId);
+      return NextResponse.json({ error: "فشل إنشاء رقم التسجيل. يرجى المحاولة لاحقاً." }, { status: 500 });
+    }
+
+    const registrationEntries = registrationNumbersResult.data ?? [];
+    const numericValues = registrationEntries
+      .map((row) => row.registration_number?.trim() ?? "")
+      .filter((value) => /^\d+$/.test(value))
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    const maxNumericTicket = numericValues.length > 0 ? Math.max(...numericValues) : 0;
+    const nextTicketNumber = Math.max(registrationEntries.length, maxNumericTicket + 1);
+    const registration_number = createRegistrationNumber(nextTicketNumber);
 
     const registrationUpdate = await supabase
       .from("participants")
