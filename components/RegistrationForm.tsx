@@ -43,6 +43,16 @@ function getAgeCategory(age: number | null) {
   return "غير مشمول بالفئات المعلنة";
 }
 
+function normalizeToAsciiDigits(value: string) {
+  return value
+    .replace(/[\u0660-\u0669]/g, (char) => String(char.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (char) => String(char.charCodeAt(0) - 0x06f0));
+}
+
+function normalizeNumericInput(value: string) {
+  return normalizeToAsciiDigits(value).replace(/\D/g, "");
+}
+
 export default function RegistrationForm() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>({
@@ -75,18 +85,20 @@ export default function RegistrationForm() {
     const nextErrors: FormErrors = {};
     const phonePattern = /^[234]\d{7}$/;
     const nationalIdPattern = /^\d{10}$/;
+    const normalizedPhone = normalizeNumericInput(form.phone);
+    const normalizedNationalId = normalizeNumericInput(form.nationalId);
 
     if (!form.fullName.trim()) nextErrors.fullName = "يرجى إدخال الاسم الكامل";
     if (!form.birthDate) nextErrors.birthDate = "يرجى إدخال تاريخ الميلاد";
     if (!form.gender) nextErrors.gender = "يرجى اختيار الجنس";
-    if (!form.phone.trim()) {
+    if (!normalizedPhone) {
       nextErrors.phone = "يرجى إدخال رقم الهاتف";
-    } else if (!phonePattern.test(form.phone.trim())) {
+    } else if (!phonePattern.test(normalizedPhone)) {
       nextErrors.phone = "يرجى إدخال رقم هاتف موريتاني محلي صالح مكون من 8 أرقام يبدأ بـ 2 أو 3 أو 4.";
     }
-    if (!form.nationalId.trim()) {
+    if (!normalizedNationalId) {
       nextErrors.nationalId = "يرجى إدخال رقم بطاقة التعريف الوطنية";
-    } else if (!nationalIdPattern.test(form.nationalId.trim())) {
+    } else if (!nationalIdPattern.test(normalizedNationalId)) {
       nextErrors.nationalId = "يرجى إدخال رقم بطاقة تعريف موريتاني صالح مكون من 10 أرقام.";
     }
     if (!form.address.trim()) nextErrors.address = "يرجى إدخال العنوان";
@@ -116,12 +128,15 @@ export default function RegistrationForm() {
 
     if (!validate()) return;
 
+    const normalizedPhone = normalizeNumericInput(form.phone);
+    const normalizedNationalId = normalizeNumericInput(form.nationalId);
+
     const formData = new FormData();
     formData.append("full_name", form.fullName.trim());
     formData.append("date_of_birth", form.birthDate);
     formData.append("gender", form.gender);
-    formData.append("phone", form.phone.trim());
-    formData.append("national_id", form.nationalId.trim());
+    formData.append("phone", normalizedPhone);
+    formData.append("national_id", normalizedNationalId);
     formData.append("address", form.address.trim());
     formData.append("eligibility_type", form.eligibilityType === "resident" ? "resident" : "mahdara_student");
     if (form.eligibilityType === "student") {

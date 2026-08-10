@@ -19,6 +19,16 @@ const RegistrationBodySchema = z.object({
   mahdara_name: z.string().optional(),
 });
 
+function normalizeToAsciiDigits(value: string) {
+  return value
+    .replace(/[\u0660-\u0669]/g, (char) => String(char.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (char) => String(char.charCodeAt(0) - 0x06f0));
+}
+
+function normalizeNumericInput(value: string) {
+  return normalizeToAsciiDigits(value).replace(/\D/g, "");
+}
+
 function calculateAge(dateOfBirth: string) {
   const birth = new Date(dateOfBirth);
   if (Number.isNaN(birth.getTime())) return null;
@@ -58,8 +68,8 @@ export async function POST(request: Request) {
       full_name: formData.get("full_name")?.toString() ?? "",
       date_of_birth: formData.get("date_of_birth")?.toString() ?? "",
       gender: formData.get("gender")?.toString() ?? "",
-      phone: formData.get("phone")?.toString() ?? "",
-      national_id: formData.get("national_id")?.toString() ?? "",
+      phone: normalizeNumericInput(formData.get("phone")?.toString() ?? ""),
+      national_id: normalizeNumericInput(formData.get("national_id")?.toString() ?? ""),
       address: formData.get("address")?.toString() ?? "",
       eligibility_type: formData.get("eligibility_type")?.toString() ?? "",
       mahdara_name: formData.get("mahdara_name")?.toString() ?? "",
